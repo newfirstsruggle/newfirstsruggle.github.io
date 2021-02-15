@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>中国疫情大屏可视化</title>
+	</head>
+	<!-- bootstrap -->
+	<link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css" />
+
+	<style type="text/css">
+		body {
+			background: url(./assets/img/630.png);
+			/* background-size: 100% 100%; */
+			filter: none;
+			width: 100%;
+			background-repeat: repeat-y;
+			left: 0px;
+					background-size:cover;
+			        background-attachment:fixed;
+		}
+		
+		.outer {
+			margin: auto;
+			border-radius: 70px;
+			border: #aaffff;
+			border-width: 3px;
+			border-style: solid;
+		}
+
+		.inner {
+			margin: 7px auto;
+			border-radius: 70px;
+			border: #aaffff;
+			border-style: solid;
+			border-width: 3px;
+		}
+
+		#inner_span {
+			font-size: 18px;
+			color: #ffffff;
+		}
+
+		#inner_problem {
+			font-size: 16px;
+			color: #ffffff;
+		}
+	</style>
+
+	<!-- 想要用echarts画图，就必须先导入assets文件夹下面的echarts.js扩展库 -->
+	<script src="assets/js/echarts.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="assets/js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="assets/js/china.js" type="text/javascript" charset="utf-8"></script>
+	<script src="assets/js/jquery.cookie.js" type="text/javascript" charset="utf-8"></script>
+
+	<!-- 导入数据 -->
+	<script src="js/tooltipData.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/problemData.js" type="text/javascript" charset="utf-8"></script>
+
+	<body>
+		<div class="container">
+			<div class="row row-cols-1">
+				<div class="col" id="main" style="width: 100%;background-color: rgba(0,0,0,0.5);"></div>
+				<div class="col" id="problem" style="width: 100%;background-color: rgba(0,0,0,0.5);display: none;">
+					<input type="button" id="HomePageReturn" class="btn btn-success mr-2 mt-2" value="返回" />
+					<!-- 简介 -->
+					<div class="outer col-lg-10">
+						<div id='innerDiv' class="inner" style="text-align: center;"></div>
+					</div>
+					<!-- 题目 -->
+					<div class="outer col-lg-10" style="margin-top: 50px;">
+						<div id="inner_problem" class="inner">
+							<div style="text-align: center;">
+								<h2 style="color: #f8f8f8;" style="">测试题</h2>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+
+
+<!-- 中国疫情地图 -->
+<script type="text/javascript">
+	// 动态设置浏览器主页的高度
+	var echartHeight = document.documentElement.clientHeight;
+	$("#main").css('height', echartHeight);
+	
+	var myChart = echarts.init(document.getElementById('main'));
+	mapChart();
+	
+	function mapChart(){
+		// 画地图
+		
+		var visualMapData = [];
+		for(var key in $.cookie()){
+			visualMapData.push({
+				name: key,
+				value: 1
+			})
+		}
+		
+		var visualMap = {
+			type: 'piecewise',
+			show:false,
+			pieces: [
+				{
+					min: 1,
+					max: 50,
+					color: '#00ffff'
+				},
+				{
+					value: 0,
+					color: '#cfc314'
+				}
+			],
+			orient: 'vertical',
+			itemWidth: 25,
+			itemHeight: 15,
+			showLabel: true,
+			seriesIndex: [0],
+		
+			textStyle: {
+				color: '#7B93A7'
+			},
+			bottom: '12%',
+			left: "15%",
+		};
+		
+		var option = {
+			visualMap: visualMap,
+			series: [{
+				type: 'map',
+				mapType: 'china',
+				top: '10%',
+				zoom:1.2,
+				label: {
+					normal: {
+						show: true,
+						textStyle: {
+							fontSize: 14
+						}
+					},
+					emphasis: {
+						textStyle: {
+							color: '#fff'
+						}
+					}
+				},
+				itemStyle: {
+					normal: {
+						borderColor: '#389BB7',
+						areaColor: '#cfc314',
+					},
+					emphasis: {
+						areaColor: '#ffaa00',
+						borderWidth: 0
+					}
+				},
+				data:visualMapData,
+				animation: false,
+			}]
+		}
+		
+		myChart.setOption(option);
+	}
+</script>
+
+
+<!-- 设置题目 -->
+<script type="text/javascript">
+	$("#HomePageReturn").click(function() {
+		$('#main').css('display', 'block');
+		$('#problem').css('display', 'none');
+	});
+	// $("#problem").css('height', echartHeight);
+	myChart.on('click', (params) => {
+		// 去除上次的标题和内容
+		$('#inner_span').remove();
+		$('#inner_id').remove();
+		$('#inner_problem br').remove(); //移除换行符
+		$('#inner_problem_div').remove();
+		$('#buttonGroup br').remove();
+		$('#buttonGroup').remove();
+		
+		// 隐藏和显示
+		$('#main').css('display', 'none');
+		$('#problem').css('display', 'block');
+		// 添加标题和内容
+		for (var i = 0; i < tooltipData.length; i++) {
+			if (params.name == tooltipData[i].name) {
+				$('#innerDiv').append('<h2 id="inner_id" style="color: #f8f8f8;">' + params.name + '</h2>')
+				$('#innerDiv').append(
+					'<span id="inner_span">' + tooltipData[i].value + '</br></br></span>'
+				);
+			}
+		}
+		// 添加题目
+		var testData = [];
+		for (var i = 0; i < problemData.length; i++) {
+			if(problemData[i].province == params.name){
+				testData = problemData[i].problem;
+			}
+		}
+		$("#inner_problem").append(
+			`<div id='inner_problem_div' class="col-lg-10" style="background-color: rgba(0,0,0,0.8);margin: auto;"></div></br>`
+		)
+		for (var i = 0; i < testData.length; i++) {
+			for (var j = 0; j < testData[i].length - 1; j++) {
+				if (j == 0) {
+					$("#inner_problem_div").append('<span class="inner_problem_span">' + (i + 1) + '、' + testData[i][j] +
+						'</span></br>')
+				} else {
+					var resultOption = String.fromCharCode(64 + j)//把数字转换为大写字母
+					$("#inner_problem_div").append('<input type="radio" class="ml-3 mr-3" value="' + resultOption + '" name="radio_' +
+						i + '"/><span class="inner_problem_span" style="color:rgb(214, 214, 214)">'+ resultOption + '、' + testData[i][j] + '</span></br>'
+					)
+				}
+			}
+			$("#inner_problem_div").append('</br>');// 每一个题目后面都换行一下
+		}
+		// 判断当前的高度是否小于浏览器的高度，小于就设置为浏览器的高度，避免布局混乱
+		// console.log($('#problem').height())
+		// if ($('#problem').height() <= echartHeight) {
+		// 	$('#problem').css('height', echartHeight);
+		// }
+		
+		// 动态添加按钮
+		$('#inner_problem').append(`
+			<div id='buttonGroup' style="text-align:center;vertical-align:middle;">
+				<input type="button" id="submit" class="btn btn-success mr-2 mt-2 col-lg-3  mr-5" value="提交" />
+				<input type="button" id="return" class="btn btn-info mr-2 mt-2 col-lg-3 ml-5" value="返回" />
+			</div>
+			</br>
+		`);
+		// 返回按钮
+		$("#return").click(function() {
+			$('#main').css('display', 'block');
+			$('#problem').css('display', 'none');
+		});
+		
+		// 获得答案
+		$('#submit').click(function(){
+			var resultArr_correct = [];//正确答案
+			var resultArr_now = [];//作答的答案
+			
+			// 获取标椎答案和作答答案
+			for (var i = 0; i < testData.length; i++) {
+				resultArr_correct.push(testData[i][5]);
+				var result = $("input[name='radio_"+ i +"']:checked").val()
+				if (result == null) { 
+					alert("请对第" + (i+1) + "题进行作答"); 
+					return; 
+				}
+				resultArr_now.push(result)
+			}
+			
+			// 计算标准答案和作答的对比
+			var flag = 0;
+			for (var i = 0; i < resultArr_correct.length; i++) {
+				if(resultArr_correct[i] == resultArr_now[i]){
+					flag += 1;//如果标准答案和作答答案一致就+1
+				}
+			}
+			// 准确率
+			var percentage = ((flag / resultArr_correct.length) * 100).toFixed(2)
+			// 如果percentage大于60，就放进cookie里面，有效期为7天
+			if(percentage >= 60){
+				$.cookie(params.name, percentage, { expires: 7 });
+				alert("您通过测试，题目答对率为"+percentage+"恭喜您成功点亮【 "+params.name+" 】");
+				$('#main').css('display', 'block');
+				$('#problem').css('display', 'none');
+				mapChart();
+			}else{
+				alert("很遗憾您没有通过测试，请继续加油！");
+			}
+		})
+	})
+</script>
